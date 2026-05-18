@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IR Tabletop Exercise Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap">
+<style>
+:root {
+  --bg0: #080a0d;
+  --bg1: #0d1117;
+  --bg2: #111720;
+  --bg3: #161d28;
+  --bg4: #1c2433;
+  --bg5: #232d3f;
+  --border0: rgba(255,255,255,0.04);
+  --border1: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --border3: rgba(255,255,255,0.22);
+  --red: #f04747;
+  --red2: #ff6b6b;
+  --red-a: rgba(240,71,71,0.1);
+  --red-b: rgba(240,71,71,0.18);
+  --amber: #f0a347;
+  --amber-a: rgba(240,163,71,0.1);
+  --amber-b: rgba(240,163,71,0.2);
+  --green: #3dd68c;
+  --green-a: rgba(61,214,140,0.08);
+  --green-b: rgba(61,214,140,0.18);
+  --blue: #4d9ef0;
+  --blue-a: rgba(77,158,240,0.08);
+  --blue-b: rgba(77,158,240,0.16);
+  --purple: #a78bfa;
+  --purple-a: rgba(167,139,250,0.1);
+  --cyan: #22d3ee;
+  --cyan-a: rgba(34,211,238,0.08);
+  --text: #e2e8f0;
+  --text2: #8896a8;
+  --text3: #4a5568;
+  --text4: #2d3748;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg0);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOPBAR */
+.topbar {
+  height: 48px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border1);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  flex-shrink: 0;
+  z-index: 50;
+}
+.topbar-brand {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-icon {
+  width: 26px; height: 26px;
+  background: var(--red);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.topbar-sep { width: 1px; height: 20px; background: var(--border2); }
+.topbar-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border1);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text4);
+}
+.status-dot.live { background: var(--red); box-shadow: 0 0 8px var(--red); animation: blink 1.4s infinite; }
+.status-dot.ready { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.done { background: var(--blue); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* LAYOUT */
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--bg1);
+  border-right: 1px solid var(--border1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar { width: 3px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.s-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border0);
+}
+.s-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.s-label::after { content:''; flex:1; height:1px; background:var(--border0); }
+
+/* Provider selector */
+.provider-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.provider-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border1);
+  border-radius: 6px;
+  padding: 7px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  user-select: none;
+}
+.provider-btn:hover { border-color: var(--border2); color: var(--text); }
+.provider-btn.active {
+  background: var(--blue-a);
+  border-color: rgba(77,158,240,0.35);
+  color: var(--blue);
+}
+
+input[type="text"], input[type="password"], input[type="url"], select, textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border1);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color .2s;
+  margin-bottom: 6px;
+}
+input:focus, select:focus, textarea:focus { border-color: rgba(77,158,240,.4); }
+select option { background: var(--bg3); }
+.field-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 3px;
+  letter-spacing: .5px;
+}
+
+/* Stack selector */
+.stack-cat { margin-bottom: 10px; }
+.stack-cat-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.stack-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.chip {
+  background: var(--bg3);
+  border: 1px solid var(--border1);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--border2); color: var(--text); }
+.chip.on { background: var(--blue-a); border-color: rgba(77,158,240,.35); color: var(--blue); }
+.chip.gap-chip { background: var(--red-a); border-color: rgba(240,71,71,.3); color: var(--red); }
+
+/* Scenario selector */
+.scenario-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scenario-cat-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.scenario-item {
+  background: var(--bg3);
+  border: 1px solid var(--border1);
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scenario-item:hover { border-color: var(--border2); }
+.scenario-item.active {
+  background: var(--amber-a);
+  border-color: rgba(240,163,71,.35);
+}
+.scenario-icon { font-size: 14px; flex-shrink: 0; }
+.scenario-name { font-size: 11px; font-weight: 500; color: var(--text); }
+.scenario-sub { font-size: 9px; color: var(--text3); font-family: var(--mono); margin-top: 1px; }
+
+/* Inject config */
+.inject-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.inject-row label { font-family: var(--mono); font-size: 10px; color: var(--text2); white-space: nowrap; }
+.inject-row select { margin: 0; flex: 1; }
+.progress-track {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.p-seg {
+  flex: 1;
+  height: 3px;
+  background: var(--bg5);
+  border-radius: 2px;
+  transition: all .4s;
+}
+.p-seg.done { background: var(--green); }
+.p-seg.active { background: var(--amber); animation: blink 1.4s infinite; }
+
+/* Start button */
+.start-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--red) 0%, #c0392b 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+}
+.start-btn:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(240,71,71,.3); }
+.start-btn:active { transform: none; }
+.start-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* MAIN PANEL */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg0);
+}
+
+/* CHAT */
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.chat::-webkit-scrollbar { width: 4px; }
+.chat::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Welcome */
+.welcome {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+  opacity: .7;
+}
+.welcome-glyph {
+  width: 72px; height: 72px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+}
+.welcome-title { font-family: var(--display); font-size: 24px; font-weight: 700; color: var(--text2); letter-spacing: 1px; }
+.welcome-desc { font-size: 12px; color: var(--text3); max-width: 380px; line-height: 1.8; font-family: var(--mono); }
+
+/* System messages */
+.sys-msg {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sys-msg::before, .sys-msg::after { content:''; flex:1; height:1px; background:var(--border0); }
+.sys-msg.warn { color: var(--amber); }
+
+/* ALERT PANELS - styled like real tools */
+.alert-panel {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border1);
+  font-family: var(--mono);
+  font-size: 11px;
+  animation: slideIn .35s ease;
+  max-width: 860px;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+.alert-panel.crowdstrike { border-color: rgba(240,71,71,.25); }
+.alert-panel.splunk { border-color: rgba(240,163,71,.2); }
+.alert-panel.sentinel { border-color: rgba(77,158,240,.2); }
+.alert-panel.defender { border-color: rgba(77,158,240,.3); }
+.alert-panel.terminal { border-color: rgba(61,214,140,.2); }
+.alert-panel.email { border-color: rgba(167,139,250,.2); }
+.alert-panel.syslog { border-color: rgba(34,211,238,.15); }
+.alert-panel.generic { border-color: var(--border2); }
+
+/* Panel header bar */
+.panel-header {
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.crowdstrike .panel-header { background: rgba(240,71,71,.12); color: var(--red2); }
+.splunk .panel-header { background: rgba(240,163,71,.1); color: var(--amber); }
+.sentinel .panel-header { background: rgba(77,158,240,.1); color: var(--blue); }
+.defender .panel-header { background: rgba(77,158,240,.12); color: #60a5fa; }
+.terminal .panel-header { background: rgba(61,214,140,.08); color: var(--green); }
+.email .panel-header { background: rgba(167,139,250,.1); color: var(--purple); }
+.syslog .panel-header { background: rgba(34,211,238,.08); color: var(--cyan); }
+.generic .panel-header { background: var(--bg3); color: var(--text2); }
+
+.panel-dot { width: 7px; height: 7px; border-radius: 50%; }
+.crowdstrike .panel-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.splunk .panel-dot { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.sentinel .panel-dot, .defender .panel-dot { background: var(--blue); }
+.terminal .panel-dot { background: var(--green); }
+.email .panel-dot { background: var(--purple); }
+.syslog .panel-dot { background: var(--cyan); }
+.generic .panel-dot { background: var(--text3); }
+
+.panel-sev {
+  margin-left: auto;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+.sev-critical { background: rgba(240,71,71,.2); color: var(--red2); }
+.sev-high { background: rgba(240,163,71,.2); color: var(--amber); }
+.sev-medium { background: rgba(77,158,240,.15); color: var(--blue); }
+.sev-info { background: var(--bg4); color: var(--text2); }
+
+/* Panel body */
+.panel-body {
+  padding: 12px 14px;
+  background: var(--bg1);
+  line-height: 1.7;
+  color: var(--text2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.panel-body .kv-key { color: var(--text3); }
+.panel-body .kv-val { color: var(--text); }
+.panel-body .highlight-red { color: var(--red2); }
+.panel-body .highlight-amber { color: var(--amber); }
+.panel-body .highlight-green { color: var(--green); }
+.panel-body .highlight-blue { color: var(--blue); }
+.panel-body .code-inline {
+  background: var(--bg4);
+  border: 1px solid var(--border1);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  color: var(--cyan);
+}
+
+/* Terminal panel */
+.terminal-body {
+  background: #0a0c0a;
+  padding: 12px 14px;
+  color: var(--green);
+  font-size: 11px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+.terminal-body .t-cmd { color: #fff; }
+.terminal-body .t-prompt { color: var(--text3); }
+
+/* Inject badge */
+.inject-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.inject-num-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: var(--red-b);
+  color: var(--red2);
+  border: 1px solid rgba(240,71,71,.3);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+.mitre-phase-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.mitre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.mitre-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--blue-a);
+  color: #60a5fa;
+  border: 1px solid rgba(77,158,240,.2);
+  letter-spacing: .5px;
+}
+
+/* Adversary reaction block */
+.reaction-block {
+  background: var(--bg2);
+  border: 1px solid var(--border1);
+  border-left: 3px solid var(--red);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  animation: slideIn .3s ease;
+  max-width: 860px;
+}
+.reaction-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--red);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Team response */
+.team-msg {
+  align-self: flex-end;
+  max-width: 700px;
+  width: 100%;
+  animation: slideIn .3s ease;
+}
+.team-bubble {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-right: 3px solid var(--green);
+  border-radius: 8px 2px 8px 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.team-label {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: rgba(61,214,140,.5);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* Question prompt */
+.question-prompt {
+  background: var(--bg2);
+  border: 1px solid rgba(240,163,71,.2);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  line-height: 1.6;
+  margin-top: 8px;
+  max-width: 860px;
+}
+.question-prompt::before {
+  content: '▶ ';
+  opacity: .6;
+}
+
+/* Typing indicator */
+.typing-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg2);
+  border: 1px solid rgba(240,71,71,.15);
+  border-left: 3px solid var(--red);
+  border-radius: 0 8px 8px 0;
+  width: fit-content;
+}
+.typing-label { font-family: var(--mono); font-size: 9px; color: var(--red); letter-spacing: 1px; text-transform: uppercase; }
+.typing-dots { display: flex; gap: 3px; }
+.t-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); animation: tdot 1.2s infinite; }
+.t-dot:nth-child(2){animation-delay:.2s} .t-dot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,60%,100%{opacity:.2;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+
+/* AAR */
+.aar-wrap {
+  max-width: 860px;
+  width: 100%;
+  animation: slideIn .4s ease;
+}
+.aar-header {
+  background: linear-gradient(135deg, rgba(61,214,140,.12), rgba(61,214,140,.04));
+  border: 1px solid rgba(61,214,140,.25);
+  border-radius: 10px 10px 0 0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.aar-title { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--green); letter-spacing: 1px; }
+.aar-subtitle { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; margin-top: 2px; }
+.aar-body {
+  background: var(--bg1);
+  border: 1px solid rgba(61,214,140,.1);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.aar-section {}
+.aar-sec-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border0);
+}
+.aar-sec-content {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text2);
+  white-space: pre-wrap;
+}
+.aar-score {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* INPUT AREA */
+.input-zone {
+  border-top: 1px solid var(--border1);
+  padding: 14px 20px;
+  background: var(--bg1);
+  flex-shrink: 0;
+}
+.input-flex {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.input-flex textarea {
+  flex: 1;
+  resize: none;
+  min-height: 52px;
+  max-height: 160px;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  transition: border-color .2s;
+}
+.input-flex textarea:focus { border-color: rgba(61,214,140,.35); }
+.input-flex textarea::placeholder { color: var(--text3); }
+.input-flex textarea:disabled { opacity: .4; cursor: not-allowed; }
+.send-btn {
+  background: rgba(61,214,140,.1);
+  border: 1px solid rgba(61,214,140,.3);
+  border-radius: 8px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 0 18px;
+  height: 52px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.send-btn:hover { background: rgba(61,214,140,.18); }
+.send-btn:disabled { opacity: .3; cursor: not-allowed; }
+.input-hint {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: .5px;
+}
+
+/* MISC */
+.hidden { display: none !important; }
+hr.thin { border: none; border-top: 1px solid var(--border0); margin: 4px 0; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Test button */
+.test-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 7px;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.test-btn:hover { border-color: var(--border3); color: var(--text); }
+.test-btn:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">⬛</div>
+    IR TABLETOP
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-label">Incident Response Exercise Engine // MITRE ATT&CK</div>
+  <div class="topbar-right">
+    <div class="status-pill">
+      <div class="status-dot" id="sDot"></div>
+      <span id="sText">STANDBY</span>
+    </div>
+  </div>
+</div>
+
+<div class="workspace">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<div class="sidebar-scroll">
+
+  <!-- AI PROVIDER -->
+  <div class="s-section">
+    <div class="s-label">AI Provider</div>
+    <div class="provider-grid" id="providerGrid">
+      <div class="provider-btn active" data-p="anthropic" onclick="pickProvider(this)">Claude</div>
+      <div class="provider-btn" data-p="openai" onclick="pickProvider(this)">ChatGPT</div>
+      <div class="provider-btn" data-p="deepseek" onclick="pickProvider(this)">DeepSeek</div>
+      <div class="provider-btn" data-p="qwen" onclick="pickProvider(this)">Qwen</div>
+      <div class="provider-btn" data-p="grok" onclick="pickProvider(this)">Grok</div>
+      <div class="provider-btn" data-p="perplexity" onclick="pickProvider(this)">Perplexity</div>
+      <div class="provider-btn" data-p="mistral" onclick="pickProvider(this)">Mistral</div>
+      <div class="provider-btn" data-p="custom" onclick="pickProvider(this)">Custom</div>
+    </div>
+    <div class="field-label">API Endpoint</div>
+    <input type="url" id="fEndpoint" placeholder="https://api.example.com/v1/..." />
+    <div class="field-label">Model</div>
+    <input type="text" id="fModel" placeholder="model name" />
+    <div class="field-label">API Key</div>
+    <input type="password" id="fKey" placeholder="sk-..." />
+    <button class="test-btn" onclick="testConn()" id="testBtn">Verify Connection</button>
+  </div>
+
+  <!-- ENV NOTES -->
+  <div class="s-section">
+    <div class="s-label">Environment Notes</div>
+    <textarea id="envNotes" rows="3" style="resize:none;font-size:10px;color:var(--text2)" placeholder="Describe your org — size, compliance scope, SOC maturity, network topology, segmentation, etc."></textarea>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="s-section">
+    <div class="s-label">Tech Stack</div>
+
+    <div class="stack-cat">
+      <div class="stack-cat-title">Endpoint / EDR</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">CrowdStrike</div>
+        <div class="chip" onclick="tog(this)">SentinelOne</div>
+        <div class="chip" onclick="tog(this)">Defender ATP</div>
+        <div class="chip" onclick="tog(this)">Carbon Black</div>
+        <div class="chip" onclick="tog(this)">Cortex XDR</div>
+        <div class="chip gap-chip" onclick="tog(this)">No EDR</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">SIEM / Log Mgmt</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">Splunk</div>
+        <div class="chip" onclick="tog(this)">Microsoft Sentinel</div>
+        <div class="chip" onclick="tog(this)">Elastic SIEM</div>
+        <div class="chip" onclick="tog(this)">IBM QRadar</div>
+        <div class="chip" onclick="tog(this)">Chronicle</div>
+        <div class="chip" onclick="tog(this)">Datadog</div>
+        <div class="chip gap-chip" onclick="tog(this)">No SIEM</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">Identity / IAM</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">Active Directory</div>
+        <div class="chip" onclick="tog(this)">Entra ID</div>
+        <div class="chip" onclick="tog(this)">Okta</div>
+        <div class="chip" onclick="tog(this)">CyberArk PAM</div>
+        <div class="chip" onclick="tog(this)">Ping Identity</div>
+        <div class="chip gap-chip" onclick="tog(this)">No MFA</div>
+        <div class="chip gap-chip" onclick="tog(this)">Shared Admins</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">Network / Perimeter</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">Palo Alto NGFW</div>
+        <div class="chip" onclick="tog(this)">Fortinet</div>
+        <div class="chip" onclick="tog(this)">Cisco FTD</div>
+        <div class="chip" onclick="tog(this)">Zscaler</div>
+        <div class="chip" onclick="tog(this)">Darktrace</div>
+        <div class="chip gap-chip" onclick="tog(this)">No IDS/IPS</div>
+        <div class="chip gap-chip" onclick="tog(this)">Flat Network</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">Cloud</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">AWS</div>
+        <div class="chip" onclick="tog(this)">Azure</div>
+        <div class="chip" onclick="tog(this)">GCP</div>
+        <div class="chip" onclick="tog(this)">M365</div>
+        <div class="chip" onclick="tog(this)">Google Workspace</div>
+        <div class="chip gap-chip" onclick="tog(this)">On-Prem Only</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">Email / Collab</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">Proofpoint</div>
+        <div class="chip" onclick="tog(this)">Mimecast</div>
+        <div class="chip" onclick="tog(this)">Exchange Online</div>
+        <div class="chip" onclick="tog(this)">Slack</div>
+        <div class="chip" onclick="tog(this)">Teams</div>
+        <div class="chip gap-chip" onclick="tog(this)">No Email Filter</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">Backup / DR</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">Veeam</div>
+        <div class="chip" onclick="tog(this)">Commvault</div>
+        <div class="chip" onclick="tog(this)">Azure Backup</div>
+        <div class="chip" onclick="tog(this)">Immutable S3</div>
+        <div class="chip gap-chip" onclick="tog(this)">No Backups</div>
+        <div class="chip gap-chip" onclick="tog(this)">Untested DR</div>
+      </div>
+    </div>
+    <div class="stack-cat">
+      <div class="stack-cat-title">Vulnerability Mgmt</div>
+      <div class="stack-wrap">
+        <div class="chip" onclick="tog(this)">Tenable</div>
+        <div class="chip" onclick="tog(this)">Qualys</div>
+        <div class="chip" onclick="tog(this)">Rapid7</div>
+        <div class="chip gap-chip" onclick="tog(this)">No Patch Mgmt</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENARIO -->
+  <div class="s-section">
+    <div class="s-label">Threat Scenario</div>
+    <div class="scenario-scroll" id="scenarioList">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- EXERCISE CONFIG -->
+  <div class="s-section">
+    <div class="s-label">Exercise Config</div>
+    <div class="inject-row">
+      <label>Injects:</label>
+      <select id="injectSel" onchange="rebuildProgress()">
+        <option value="3">3 — Quick Run (45 min)</option>
+        <option value="4">4 — Standard (60 min)</option>
+        <option value="5" selected>5 — Full (90 min)</option>
+      </select>
+    </div>
+    <div class="progress-track" id="progressTrack"></div>
+    <button class="start-btn" id="startBtn" onclick="startEx()">⬛ Initiate Exercise</button>
+  </div>
+
+</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="chat" id="chat">
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-glyph">🛡️</div>
+      <div class="welcome-title">Threat Actor Engine</div>
+      <div class="welcome-desc">
+        Configure your AI provider · map your tech stack · select a scenario · initiate exercise.<br><br>
+        Alerts will render as real tool outputs. The AI operates as a full threat actor — no meta-commentary, no early reveals.
+      </div>
+    </div>
+  </div>
+  <div class="input-zone">
+    <div class="input-flex">
+      <textarea id="teamInput" placeholder="Your team's response — what actions do you take, what do you investigate, who do you call, what do you contain?" disabled
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitResponse()}"
+        oninput="autoGrow(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="submitResponse()" disabled>Submit ↵</button>
+    </div>
+    <div class="input-hint">ENTER to submit · SHIFT+ENTER for new line</div>
+  </div>
+</div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// SCENARIOS (expanded)
+// ──────────────────────────────────────────────
+const SCENARIOS = [
+  { cat: 'Malware & Ransomware', items: [
+    { id:'ransomware-ras', icon:'🔒', name:'Ransomware (RaaS)', sub:'Double extortion · domain compromise' },
+    { id:'wiper', icon:'💣', name:'Destructive Wiper', sub:'State-sponsored · no ransom · max damage' },
+    { id:'cryptominer', icon:'⛏️', name:'Cryptominer Infestation', sub:'Resource abuse · persistent implant' },
+    { id:'fileless', icon:'👻', name:'Fileless Malware', sub:'Memory-only · LOLBins · evasion-heavy' },
+  ]},
+  { cat: 'Advanced Persistent Threat', items: [
+    { id:'apt-espionage', icon:'🕵️', name:'APT Espionage', sub:'Nation-state · IP theft · long dwell time' },
+    { id:'apt-ics', icon:'🏭', name:'ICS / OT Attack', sub:'Industrial systems · PLC targeting' },
+    { id:'apt-telco', icon:'📡', name:'Telecom Infiltration', sub:'SS7 abuse · CDR exfiltration' },
+  ]},
+  { cat: 'Social Engineering', items: [
+    { id:'bec', icon:'📧', name:'Business Email Compromise', sub:'CFO fraud · wire transfer · impersonation' },
+    { id:'vishing', icon:'📞', name:'Vishing / Social Eng.', sub:'Help desk bypass · credential reset' },
+    { id:'deepfake-bec', icon:'🎭', name:'AI-Assisted Phishing', sub:'Deepfake audio · spear-phish · MFA bypass' },
+  ]},
+  { cat: 'Identity & Access', items: [
+    { id:'insider', icon:'👤', name:'Malicious Insider', sub:'Privileged user · data theft · sabotage' },
+    { id:'credential-stuffing', icon:'🔑', name:'Credential Stuffing', sub:'Breached passwords · account takeover' },
+    { id:'cloud-iam', icon:'🔐', name:'Cloud IAM Compromise', sub:'SSRF · metadata theft · role escalation' },
+  ]},
+  { cat: 'Supply Chain & Third Party', items: [
+    { id:'supply-chain', icon:'🔗', name:'Software Supply Chain', sub:'Trojanized package · build pipeline' },
+    { id:'msp-breach', icon:'🏢', name:'MSP / Vendor Breach', sub:'RMM tool abuse · downstream pivot' },
+    { id:'open-source', icon:'📦', name:'OSS Dependency Attack', sub:'Typosquat · malicious npm/PyPI' },
+  ]},
+  { cat: 'Cloud & Infrastructure', items: [
+    { id:'cloud-breach', icon:'☁️', name:'Cloud Misconfiguration', sub:'Public S3 · exposed API · IMDS abuse' },
+    { id:'container-escape', icon:'🐳', name:'Container / K8s Escape', sub:'Privileged pod · cluster takeover' },
+    { id:'ci-cd', icon:'⚙️', name:'CI/CD Pipeline Compromise', sub:'Build poisoning · secrets theft' },
+  ]},
+  { cat: 'Web & Application', items: [
+    { id:'web-app', icon:'🌐', name:'Web Application Attack', sub:'SQLi · SSRF · RCE · data breach' },
+    { id:'api-abuse', icon:'🔌', name:'API Abuse / BOLA', sub:'Broken object auth · mass data scrape' },
+  ]},
+  { cat: 'Physical & Hybrid', items: [
+    { id:'physical-breach', icon:'🚪', name:'Physical Breach + Pivot', sub:'Dropped USB · rogue device · office intrusion' },
+    { id:'telecom-sim', icon:'📱', name:'SIM Swap + Account Takeover', sub:'Mobile carrier abuse · MFA bypass' },
+  ]},
+];
+
+let activeScenario = 'ransomware-ras';
+
+function buildScenarioList() {
+  const el = document.getElementById('scenarioList');
+  el.innerHTML = '';
+  SCENARIOS.forEach(cat => {
+    const cl = document.createElement('div');
+    cl.className = 'scenario-cat-label';
+    cl.textContent = cat.cat;
+    el.appendChild(cl);
+    cat.items.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'scenario-item' + (s.id === activeScenario ? ' active' : '');
+      item.dataset.id = s.id;
+      item.onclick = () => pickScenario(s.id);
+      item.innerHTML = `<div class="scenario-icon">${s.icon}</div><div><div class="scenario-name">${s.name}</div><div class="scenario-sub">${s.sub}</div></div>`;
+      el.appendChild(item);
+    });
+  });
+}
+
+function pickScenario(id) {
+  activeScenario = id;
+  document.querySelectorAll('.scenario-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+}
+
+// ──────────────────────────────────────────────
+// PROVIDERS
+// ──────────────────────────────────────────────
+const PROV = {
+  anthropic:  { ep: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-20250514', isAnthropic: true },
+  openai:     { ep: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o' },
+  deepseek:   { ep: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat' },
+  qwen:       { ep: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus' },
+  grok:       { ep: 'https://api.x.ai/v1/chat/completions', model: 'grok-3' },
+  perplexity: { ep: 'https://api.perplexity.ai/chat/completions', model: 'llama-3.1-sonar-large-128k-online' },
+  mistral:    { ep: 'https://api.mistral.ai/v1/chat/completions', model: 'mistral-large-latest' },
+  custom:     { ep: '', model: '' },
+};
+
+let activeProvider = 'anthropic';
+
+function pickProvider(el) {
+  document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeProvider = el.dataset.p;
+  const d = PROV[activeProvider];
+  document.getElementById('fEndpoint').value = d.ep || '';
+  document.getElementById('fModel').value = d.model || '';
+}
+
+// ──────────────────────────────────────────────
+// STACK
+// ──────────────────────────────────────────────
+const selectedStack = new Set();
+
+function tog(el) {
+  const val = el.textContent.trim();
+  if (el.classList.contains('on')) {
+    el.classList.remove('on');
+    selectedStack.delete(val);
+  } else {
+    el.classList.add('on');
+    selectedStack.add(val);
+  }
+}
+
+function stackSummary() {
+  return selectedStack.size > 0 ? [...selectedStack].join(', ') : 'Not specified (assume generic enterprise)';
+}
+
+// ──────────────────────────────────────────────
+// PROGRESS
+// ──────────────────────────────────────────────
+let totalInjects = 5;
+let doneInjects = 0;
+let exerciseActive = false;
+
+function rebuildProgress() {
+  totalInjects = parseInt(document.getElementById('injectSel').value);
+  const track = document.getElementById('progressTrack');
+  track.innerHTML = '';
+  for (let i = 0; i < totalInjects; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'p-seg' + (i < doneInjects ? ' done' : i === doneInjects && exerciseActive ? ' active' : '');
+    track.appendChild(seg);
+  }
+}
+
+function updateProgress() {
+  const segs = document.querySelectorAll('.p-seg');
+  segs.forEach((s, i) => {
+    s.className = 'p-seg' + (i < doneInjects ? ' done' : i === doneInjects && exerciseActive ? ' active' : '');
+  });
+}
+
+// ──────────────────────────────────────────────
+// STATUS
+// ──────────────────────────────────────────────
+function setStatus(type, text) {
+  document.getElementById('sDot').className = 'status-dot' + (type ? ' ' + type : '');
+  document.getElementById('sText').textContent = text;
+}
+
+// ──────────────────────────────────────────────
+// SYSTEM PROMPT
+// ──────────────────────────────────────────────
+function getScenarioMeta(id) {
+  for (const cat of SCENARIOS) {
+    for (const s of cat.items) {
+      if (s.id === id) return s;
+    }
+  }
+  return { name: id, sub: '' };
+}
+
+function buildSystemPrompt() {
+  const sm = getScenarioMeta(activeScenario);
+  const stack = stackSummary();
+  const env = document.getElementById('envNotes').value.trim() || 'Generic enterprise environment, details not specified.';
+  const n = totalInjects;
+
+  return `You are a highly skilled adversarial threat actor conducting a realistic incident response tabletop exercise. Your role is to drive the scenario as a professional attacker — no breaking character, no narrating your own meta-reasoning.
+
+SCENARIO: ${sm.name} — ${sm.sub}
+
+TARGET ENVIRONMENT:
+- Tech stack: ${stack}
+- Additional context: ${env}
+
+YOUR KNOWLEDGE BASE:
+You have expert-level knowledge of MITRE ATT&CK TTPs across all 14 tactics. You will select and apply TTPs realistically based on the target's specific tooling and gaps. Known defensive gaps (tools prefixed "No " or marked as absent) should be actively exploited in your attack path. Adapt dynamically to the team's responses — if they contain well, your next inject reflects that; if they fail to act, you escalate ruthlessly.
+
+EXERCISE STRUCTURE: Exactly ${n} injects, then AAR.
+
+INJECT FORMAT — CRITICAL:
+Each inject must be delivered as a REALISTIC TOOL ALERT, not a narrative description. Match the alert format to which tool in the target stack would surface it. Format examples:
+
+For CrowdStrike alerts:
+\`\`\`
+[CROWDSTRIKE FALCON] DETECTION — SEVERITY: HIGH
+Host: WS-ENG-05 | IP: 10.10.10.105 | User: jdoe
+Tactic: Execution | Technique: T1059.001 - PowerShell
+...
+\`\`\`
+
+For Splunk:
+\`\`\`
+index=windows EventCode=4624 LogonType=10
+ComputerName=SQL-SRV-02 TargetUserName=svc_sql
+...
+\`\`\`
+
+For terminal/syslog:
+\`\`\`
+Aug 21 14:32:01 dc-01 sshd[3821]: Accepted publickey for root from 10.10.10.105 port 52341
+\`\`\`
+
+For email alerts:
+\`\`\`
+FROM: security-alerts@yourdomain.com
+TO: soc@yourdomain.com
+SUBJECT: [ALERT] Anomalous sign-in detected...
+\`\`\`
+
+ALERT STYLE RULES:
+- DO NOT include "Good. The exercise begins." or "Authorization confirmed." — just deliver the first inject cold.
+- DO NOT reveal the threat actor group name, attribution, or dossier until the AAR.
+- DO NOT break character to say "I am proceeding to the next inject" or "acknowledged" — just react operationally as the attacker, then deliver the next alert.
+- After each team response: briefly show what the attacker does next as a consequence (1-3 lines, written as operational log/status), then deliver the next inject alert.
+- Make IPs, hostnames, usernames, file paths, registry keys, and timestamps realistic and internally consistent throughout the exercise.
+- MITRE TTPs line format: "TTPs: T1566.001, T1059.001, T1003.001" — comma-separated, no extra prose.
+- Each inject: start with "[INJECT X/${n}]" on its own line, then "TTPs: T####, ..." on next line, then the alert block(s), then a focused question to the team.
+- The question must be specific and operational — not "what do you do?" but specific: "WS-ENG-05 is still live on the network. What containment steps do you take, and in what order? Who do you notify at this stage?"
+
+TEAM RESPONSE ADAPTATION:
+- Strong response (isolation, containment, credential reset, escalation) → acknowledge what they did, show the attacker pivoting or being slowed, then escalate differently.
+- Weak/partial response → show the attacker advancing, exploiting the gap explicitly.
+- If the team provides enough correct actions to realistically stop the threat at a given stage, you MAY end the exercise early (before ${n} injects) and move to AAR — this is a reward for good IR.
+
+FINAL AAR FORMAT — output exactly this after the last inject response:
+===AAR_START===
+THREAT ACTOR IDENTITY: [reveal who they were, group archetype, motivation]
+OVERALL SCORE: [X/10]
+OVERALL SUMMARY: [2-3 sentences]
+WHAT WENT WELL:
+[bullet list]
+GAPS AND MISSED STEPS:
+[bullet list]
+RECOMMENDATIONS:
+[specific, numbered, tied to their exact stack]
+TOOLS TO CONSIDER:
+[specific tools/processes]
+KEY TAKEAWAYS:
+[5 numbered lessons]
+===AAR_END===`;
+}
+
+// ──────────────────────────────────────────────
+// API
+// ──────────────────────────────────────────────
+let history = [];
+
+async function callAPI(userMsg) {
+  const ep = document.getElementById('fEndpoint').value.trim();
+  const model = document.getElementById('fModel').value.trim();
+  const key = document.getElementById('fKey').value.trim();
+  if (!ep || !model || !key) throw new Error('Configure API endpoint, model, and key first.');
+
+  history.push({ role: 'user', content: userMsg });
+
+  let resp, data;
+  const prov = PROV[activeProvider];
+
+  if (prov?.isAnthropic) {
+    resp = await fetch(ep, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({ model, max_tokens: 2000, system: buildSystemPrompt(), messages: history })
+    });
+    data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || `HTTP ${resp.status}`);
+    const reply = data.content?.[0]?.text || '';
+    history.push({ role: 'assistant', content: reply });
+    return reply;
+  } else {
+    const msgs = [{ role: 'system', content: buildSystemPrompt() }, ...history];
+    resp = await fetch(ep, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({ model, max_tokens: 2000, messages: msgs })
+    });
+    data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || `HTTP ${resp.status}`);
+    const reply = data.choices?.[0]?.message?.content || '';
+    history.push({ role: 'assistant', content: reply });
+    return reply;
+  }
+}
+
+// ──────────────────────────────────────────────
+// TEST CONNECTION
+// ──────────────────────────────────────────────
+async function testConn() {
+  const btn = document.getElementById('testBtn');
+  btn.textContent = 'Testing...'; btn.disabled = true;
+  const saved = [...history]; history = [];
+  try {
+    await callAPI('Respond with only the text: OK');
+    history = saved;
+    btn.textContent = '✓ Connected';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'rgba(61,214,140,.4)';
+  } catch(e) {
+    history = saved;
+    btn.textContent = '✗ Failed — ' + e.message.slice(0,40);
+    btn.style.color = 'var(--red)';
+    btn.style.borderColor = 'rgba(240,71,71,.4)';
+    sysMsg('Connection error: ' + e.message, 'warn');
+  }
+  setTimeout(() => { btn.textContent = 'Verify Connection'; btn.style.color=''; btn.style.borderColor=''; btn.disabled=false; }, 3000);
+}
+
+// ──────────────────────────────────────────────
+// EXERCISE
+// ──────────────────────────────────────────────
+async function startEx() {
+  const ep = document.getElementById('fEndpoint').value.trim();
+  const key = document.getElementById('fKey').value.trim();
+  const model = document.getElementById('fModel').value.trim();
+  if (!ep || !key || !model) { sysMsg('Configure API provider before starting.', 'warn'); return; }
+
+  // Reset
+  history = [];
+  doneInjects = 0;
+  exerciseActive = true;
+  totalInjects = parseInt(document.getElementById('injectSel').value);
+
+  document.getElementById('welcomeScreen').classList.add('hidden');
+  document.getElementById('chat').innerHTML = '';
+
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = 'Exercise In Progress';
+  document.getElementById('injectSel').disabled = true;
+  setStatus('live', 'EXERCISE LIVE');
+  rebuildProgress();
+
+  const sm = getScenarioMeta(activeScenario);
+  sysMsg(`Exercise initiated · ${sm.name} · ${totalInjects} injects`);
+
+  await fetchAdversary('BEGIN EXERCISE — deliver inject 1 now.');
+}
+
+async function submitResponse() {
+  const el = document.getElementById('teamInput');
+  const text = el.value.trim();
+  if (!text || !exerciseActive) return;
+
+  el.value = ''; el.style.height = '';
+  setInputEnabled(false);
+
+  addTeamMsg(text);
+  await fetchAdversary(text);
+}
+
+async function fetchAdversary(userMsg) {
+  showTyping();
+  try {
+    const reply = await callAPI(userMsg);
+    hideTyping();
+
+    if (reply.includes('===AAR_START===')) {
+      renderAAR(reply);
+      endExercise();
+    } else {
+      doneInjects++;
+      renderInject(reply);
+      updateProgress();
+      setInputEnabled(true);
+      document.getElementById('teamInput').focus();
+    }
+  } catch(e) {
+    hideTyping();
+    sysMsg('AI error: ' + e.message, 'warn');
+    setInputEnabled(true);
+  }
+}
+
+function endExercise() {
+  exerciseActive = false;
+  doneInjects = totalInjects;
+  setInputEnabled(false);
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('startBtn').textContent = '⬛ Run Again';
+  document.getElementById('injectSel').disabled = false;
+  setStatus('done', 'COMPLETE');
+  updateProgress();
+}
+
+function setInputEnabled(on) {
+  document.getElementById('teamInput').disabled = !on;
+  document.getElementById('sendBtn').disabled = !on;
+}
+
+// ──────────────────────────────────────────────
+// RENDERING
+// ──────────────────────────────────────────────
+
+function detectAlertType(text) {
+  const t = text.toLowerCase();
+  if (t.includes('crowdstrike') || t.includes('falcon')) return 'crowdstrike';
+  if (t.includes('splunk') || t.includes('index=') || t.includes('eventcode')) return 'splunk';
+  if (t.includes('sentinel') || t.includes('azure') || t.includes('kusto') || t.includes('kql')) return 'sentinel';
+  if (t.includes('defender') || t.includes('mde') || t.includes('microsoft defender')) return 'defender';
+  if (t.includes('from:') || t.includes('subject:') || t.includes('to:') || t.includes('@')) return 'email';
+  if (/^\w{3}\s+\d+\s+\d+:\d+:\d+/.test(text.trim()) || t.includes('sshd') || t.includes('kernel') || t.includes('auth.log')) return 'syslog';
+  if (t.includes('$') || t.includes('#') || t.includes('cmd') || t.includes('bash') || t.includes('powershell') || t.includes('ps>')) return 'terminal';
+  return 'generic';
+}
+
+function alertLabel(type) {
+  const labels = {
+    crowdstrike: ['🔴 CrowdStrike Falcon', 'DETECTION'],
+    splunk: ['🟡 Splunk SIEM', 'SEARCH RESULT'],
+    sentinel: ['🔵 Microsoft Sentinel', 'INCIDENT'],
+    defender: ['🔵 Microsoft Defender', 'ALERT'],
+    email: ['📧 Email Alert', 'NOTIFICATION'],
+    syslog: ['🔵 Syslog / Auth Log', 'ENTRY'],
+    terminal: ['💚 Terminal / Shell', 'OUTPUT'],
+    generic: ['⚪ Security Alert', 'NOTIFICATION'],
+  };
+  return labels[type] || labels.generic;
+}
+
+function severityFromText(text) {
+  const t = text.toLowerCase();
+  if (t.includes('critical') || t.includes('severity: critical')) return ['CRITICAL', 'sev-critical'];
+  if (t.includes('high') || t.includes('severity: high')) return ['HIGH', 'sev-high'];
+  if (t.includes('medium') || t.includes('severity: medium')) return ['MEDIUM', 'sev-medium'];
+  return ['INFO', 'sev-info'];
+}
+
+function renderInject(raw) {
+  const chat = document.getElementById('chat');
+
+  // Extract inject header line
+  const injectLine = raw.match(/\[INJECT\s+(\d+)[^\]]*\]/i);
+  const ttpLine = raw.match(/TTPs?:\s*([T\d,\. ]+)/i);
+  const mitreTags = ttpLine ? ttpLine[1].match(/T\d{4}(?:\.\d{3})?/g) || [] : [...raw.matchAll(/T(\d{4}(?:\.\d{3})?)/g)].map(m => m[0]);
+  const phaseLine = raw.match(/\[MITRE PHASE:\s*([^\]]+)\]/i);
+
+  // Strip header lines from body
+  let body = raw
+    .replace(/\[INJECT\s+\d+[^\]]*\]/gi, '')
+    .replace(/\[MITRE PHASE:[^\]]+\]/gi, '')
+    .replace(/TTPs?:\s*[T\d,\. ]+/gi, '')
+    .trim();
+
+  // Split question prompt from alert body
+  // Question is usually the last paragraph that ends with '?'
+  const paragraphs = body.split(/\n{2,}/);
+  let question = '';
+  let alertBody = body;
+  for (let i = paragraphs.length - 1; i >= 0; i--) {
+    if (paragraphs[i].trim().endsWith('?')) {
+      question = paragraphs[i].trim();
+      alertBody = paragraphs.slice(0, i).join('\n\n').trim();
+      break;
+    }
+  }
+
+  // Inject badge
+  if (injectLine || ttpLine) {
+    const badge = document.createElement('div');
+    badge.className = 'inject-badge';
+
+    if (injectLine) {
+      const nb = document.createElement('div');
+      nb.className = 'inject-num-badge';
+      nb.textContent = `INJECT ${injectLine[1]} / ${totalInjects}`;
+      badge.appendChild(nb);
+    }
+    if (phaseLine) {
+      const pb = document.createElement('div');
+      pb.className = 'mitre-phase-badge';
+      pb.textContent = phaseLine[1].trim().toUpperCase();
+      badge.appendChild(pb);
+    }
+    chat.appendChild(badge);
+  }
+
+  // MITRE tags
+  if (mitreTags.length) {
+    const tagsDiv = document.createElement('div');
+    tagsDiv.className = 'mitre-tags';
+    [...new Set(mitreTags)].forEach(t => {
+      const tag = document.createElement('span');
+      tag.className = 'mitre-tag';
+      tag.textContent = t;
+      tagsDiv.appendChild(tag);
+    });
+    chat.appendChild(tagsDiv);
+  }
+
+  // Detect alert blocks (inside ``` ... ```)
+  const codeBlocks = [...alertBody.matchAll(/```([\s\S]*?)```/g)];
+
+  if (codeBlocks.length > 0) {
+    // Render each code block as styled alert panel
+    codeBlocks.forEach(match => {
+      const blockText = match[1].trim();
+      const type = detectAlertType(blockText);
+      const [lbl, sublbl] = alertLabel(type);
+      const [sevText, sevClass] = severityFromText(blockText);
+      renderAlertPanel(chat, type, lbl, sublbl, sevText, sevClass, blockText);
+    });
+    // Render any non-code prose
+    const prose = alertBody.replace(/```[\s\S]*?```/g, '').trim();
+    if (prose) {
+      const p = document.createElement('div');
+      p.className = 'reaction-block';
+      p.innerHTML = `<div class="reaction-label">⚡ Adversary Activity</div>${escHtml(prose)}`;
+      chat.appendChild(p);
+    }
+  } else {
+    // No code blocks — auto-detect type from whole body
+    const type = detectAlertType(alertBody);
+    const [lbl, sublbl] = alertLabel(type);
+    const [sevText, sevClass] = severityFromText(alertBody);
+    renderAlertPanel(chat, type, lbl, sublbl, sevText, sevClass, alertBody);
+  }
+
+  // Question prompt
+  if (question) {
+    const q = document.createElement('div');
+    q.className = 'question-prompt';
+    q.textContent = question;
+    chat.appendChild(q);
+  }
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function renderAlertPanel(chat, type, lbl, sublbl, sevText, sevClass, text) {
+  const panel = document.createElement('div');
+  panel.className = `alert-panel ${type}`;
+
+  const header = document.createElement('div');
+  header.className = 'panel-header';
+  header.innerHTML = `<div class="panel-dot"></div>${lbl}<span style="color:var(--text3);font-weight:400">·</span>${sublbl}<span class="panel-sev ${sevClass}">${sevText}</span>`;
+  panel.appendChild(header);
+
+  if (type === 'terminal') {
+    const body = document.createElement('div');
+    body.className = 'terminal-body';
+    body.textContent = text;
+    panel.appendChild(body);
+  } else {
+    const body = document.createElement('div');
+    body.className = 'panel-body';
+    body.textContent = text;
+    panel.appendChild(body);
+  }
+
+  chat.appendChild(panel);
+}
+
+function addTeamMsg(text) {
+  const chat = document.getElementById('chat');
+  const wrap = document.createElement('div');
+  wrap.className = 'team-msg';
+  wrap.innerHTML = `<div class="team-label">IR Team Response</div><div class="team-bubble">${escHtml(text)}</div>`;
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function sysMsg(text, cls) {
+  const chat = document.getElementById('chat');
+  const el = document.createElement('div');
+  el.className = 'sys-msg' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat');
+  const el = document.createElement('div');
+  el.id = 'typing';
+  el.innerHTML = `<div class="typing-wrap"><div class="typing-label">Threat Actor</div><div class="typing-dots"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div></div>`;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+}
+function hideTyping() { const el = document.getElementById('typing'); if (el) el.remove(); }
+
+// ──────────────────────────────────────────────
+// AAR RENDER
+// ──────────────────────────────────────────────
+function renderAAR(raw) {
+  const chat = document.getElementById('chat');
+  const aarMatch = raw.match(/===AAR_START===([\s\S]*?)===AAR_END===/);
+  const content = aarMatch ? aarMatch[1].trim() : raw;
+
+  // Pre-AAR text (adversary last words)
+  const pre = raw.split('===AAR_START===')[0].trim();
+  if (pre) {
+    const r = document.createElement('div');
+    r.className = 'reaction-block';
+    r.innerHTML = `<div class="reaction-label">⚡ Final Adversary Action</div>${escHtml(pre)}`;
+    chat.appendChild(r);
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'aar-wrap';
+
+  const header = document.createElement('div');
+  header.className = 'aar-header';
+  header.innerHTML = `<div><div class="aar-title">After Action Review</div><div class="aar-subtitle">EXERCISE COMPLETE · FULL DEBRIEF</div></div>`;
+  wrap.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'aar-body';
+
+  const SECTION_KEYS = [
+    'THREAT ACTOR IDENTITY',
+    'OVERALL SCORE',
+    'OVERALL SUMMARY',
+    'WHAT WENT WELL',
+    'GAPS AND MISSED STEPS',
+    'RECOMMENDATIONS',
+    'TOOLS TO CONSIDER',
+    'KEY TAKEAWAYS',
+  ];
+
+  const lines = content.split('\n');
+  let currentKey = null;
+  let currentLines = [];
+
+  function flush() {
+    if (!currentKey || !currentLines.length) return;
+    const sec = document.createElement('div');
+    sec.className = 'aar-section';
+    const lbl = document.createElement('div');
+    lbl.className = 'aar-sec-label';
+    lbl.textContent = currentKey;
+    const txt = document.createElement('div');
+    txt.className = 'aar-sec-content';
+    const joined = currentLines.join('\n').trim();
+    if (currentKey === 'OVERALL SCORE') {
+      const score = joined.match(/(\d+)/)?.[1] || '—';
+      txt.innerHTML = `<span class="aar-score">${score}<span style="font-size:16px;color:var(--text3)">/10</span></span>`;
+    } else {
+      txt.textContent = joined;
+    }
+    sec.appendChild(lbl); sec.appendChild(txt);
+    body.appendChild(sec);
+  }
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    const matchedKey = SECTION_KEYS.find(k => trimmed.toUpperCase().startsWith(k));
+    if (matchedKey) {
+      flush();
+      currentKey = matchedKey;
+      currentLines = [trimmed.slice(matchedKey.length).replace(/^[:\s]+/, '')].filter(Boolean);
+    } else {
+      currentLines.push(line);
+    }
+  });
+  flush();
+
+  wrap.appendChild(body);
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// ──────────────────────────────────────────────
+// UTILS
+// ──────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+function autoGrow(el) {
+  el.style.height = '52px';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+// ──────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────
+buildScenarioList();
+rebuildProgress();
+
+// Set default provider values
+document.getElementById('fEndpoint').value = PROV.anthropic.ep;
+document.getElementById('fModel').value = PROV.anthropic.model;
+</script>
+</body>
+</html>
