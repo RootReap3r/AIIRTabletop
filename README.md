@@ -4,6 +4,12 @@ A self-contained, browser-based incident response tabletop simulator powered by 
 
 ---
 
+> ⚠️ **API Key Safety**
+> This tool sends your API key directly from your browser to your chosen provider — no proxy, no backend. That's by design.
+> **Never paste your API key into a hosted instance of this tool that you don't personally control.** If someone has deployed this on Vercel, Netlify, GitHub Pages, or anywhere else, treat it as untrusted. Run it locally or from your own deployment only.
+
+---
+
 ## Features
 
 - **20+ threat scenarios** across ransomware, APT, BEC, supply chain, cloud, ICS, and more
